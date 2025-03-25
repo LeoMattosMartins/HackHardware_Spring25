@@ -61,7 +61,7 @@ const char* password = "spring25";
 #define FWD 0b01 
 #define REV 0b10
 
-#define MOVESPEED 170 // default speed for movements
+#define MOVESPEED 200 
 
 ShiftRegister74HC595<1> SR(SR_DATA, SR_CLK, SR_LTCH); // Initialize Serial Register on Driver Board (Data, Clock, Latch)
 
@@ -186,55 +186,68 @@ bool isRotateRightOn = 0;
 
 
 // Motion Functions
-void MoveLeft(){
+
+void MoveLeft(int time_ms){
   setM1(MOVESPEED, FWD);
   setM2(MOVESPEED, REV);
   setM3(MOVESPEED, REV);
   setM4(MOVESPEED, FWD);
-  return;
+  delay(time_ms);
+  Stationary();
 }
-void MoveRight(){
+
+void MoveRight(int time_ms){
   setM1(MOVESPEED, REV);
   setM2(MOVESPEED, FWD);
   setM3(MOVESPEED, FWD);
   setM4(MOVESPEED, REV);
-  return;
+  delay(time_ms);
+  Stationary();
 }
-void MoveForward(){
+
+void MoveForward(int time_ms){
   setM1(MOVESPEED, FWD);
   setM2(MOVESPEED, FWD);
   setM3(MOVESPEED, REV);
   setM4(MOVESPEED, REV);
-  return;
+  delay(time_ms);
+  Stationary();
 }
-void MoveBackward(){
+
+void MoveBackward(int time_ms){
   setM1(MOVESPEED, REV);
   setM2(MOVESPEED, REV);
   setM3(MOVESPEED, FWD);
   setM4(MOVESPEED, FWD);
-  return;
+  delay(time_ms);
+  Stationary();
 }
-void RotateLeft(){
-  setM1(MOVESPEED, FWD);
-  setM2(MOVESPEED, REV);
-  setM3(MOVESPEED, FWD);
-  setM4(MOVESPEED, REV);
-  return;
+
+void RotateLeft(int time_ms){
+  setM1(MOVESPEED-50, FWD);
+  setM2(MOVESPEED-50, REV);
+  setM3(MOVESPEED-50, FWD);
+  setM4(MOVESPEED-50, REV);
+  delay(time_ms);
+  Stationary();
 }
-void RotateRight(){
-  setM1(MOVESPEED, REV);
-  setM2(MOVESPEED, FWD);
-  setM3(MOVESPEED, REV);
-  setM4(MOVESPEED, FWD);
-  return;
+
+void RotateRight(int time_ms){
+  setM1(MOVESPEED-50, REV);
+  setM2(MOVESPEED-50, FWD);
+  setM3(MOVESPEED-50, REV);
+  setM4(MOVESPEED-50, FWD);
+  delay(time_ms);
+  Stationary();
 }
+
 void Stationary(){
   setM1(0, OFF);
   setM2(0, OFF);
   setM3(0, OFF);
   setM4(0, OFF);
-  return;
 }
+
 
 void dumpGamepad(ControllerPtr ctl) {
   // Read gamepad inputs
@@ -255,7 +268,7 @@ void dumpGamepad(ControllerPtr ctl) {
           isMoveBackwardOn = 0;
           isRotateLeftOn = 0;
           isRotateRightOn = 0;
-        MoveLeft();
+        MoveLeft(20);
     } 
     else if (axisX > threshold) {  
         Serial.println("Move Right");
@@ -265,9 +278,9 @@ void dumpGamepad(ControllerPtr ctl) {
         isMoveBackwardOn = 0;
         isRotateLeftOn = 0;
         isRotateRightOn = 0;
-        MoveRight();
+        MoveRight(20);
     } 
-    else if (axisY > threshold) {  
+    else if (axisY < -threshold) {  
         Serial.println("Move Forward");
         isMoveLeftOn = 0;
         isMoveRightOn = 0;
@@ -275,9 +288,9 @@ void dumpGamepad(ControllerPtr ctl) {
         isMoveBackwardOn = 0;
         isRotateLeftOn = 0;
         isRotateRightOn = 0;
-        MoveForward();
+        MoveForward(20);
     } 
-    else if (axisY < -threshold) {  
+    else if (axisY > threshold) {  
         Serial.println("Move Backward");
          isMoveLeftOn = 0;
          isMoveRightOn = 0;
@@ -285,7 +298,7 @@ void dumpGamepad(ControllerPtr ctl) {
          isMoveBackwardOn = 1;
         isRotateLeftOn = 0;
         isRotateRightOn = 0;
-        MoveBackward();
+        MoveBackward(20);
     } 
     else if (axisRX > threshold) {  
         Serial.println("Rotate Right");
@@ -295,7 +308,7 @@ void dumpGamepad(ControllerPtr ctl) {
               isMoveBackwardOn = 0;
               isRotateLeftOn = 0;
               isRotateRightOn = 1;
-        RotateRight();
+        RotateRight(20);
     } 
     else if (axisRX < -threshold) {  
         Serial.println("Rotate Left");
@@ -305,7 +318,7 @@ void dumpGamepad(ControllerPtr ctl) {
               isMoveBackwardOn = 0;
               isRotateLeftOn = 1;
               isRotateRightOn = 0;
-        RotateLeft();
+        RotateLeft(20);
     } 
     else if (brake > 20) {  // If throttle is pressed, stay stationary
         Serial.println("Stationary");
@@ -449,7 +462,7 @@ void loop(){
     // https://stackoverflow.com/questions/66278271/task-watchdog-got-triggered-the-tasks-did-not-reset-the-watchdog-in-time
 
     //     vTaskDelay(1);
-    delay(150);
+    delay(10);
   
 }
 
