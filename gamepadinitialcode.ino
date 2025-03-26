@@ -61,8 +61,8 @@ const char* password = "spring25";
 #define FWD 0b01 
 #define REV 0b10
 
-#define MOVESPEED 200 
-
+int MOVESPEED = 250;
+int ROTSPEED = 190;
 ShiftRegister74HC595<1> SR(SR_DATA, SR_CLK, SR_LTCH); // Initialize Serial Register on Driver Board (Data, Clock, Latch)
 
 uint8_t motor_state = 0x00; // bitstring that defines the behavior of each motor driver via the Serial Register
@@ -224,19 +224,19 @@ void MoveBackward(int time_ms){
 }
 
 void RotateLeft(int time_ms){
-  setM1(MOVESPEED-50, FWD);
-  setM2(MOVESPEED-50, REV);
-  setM3(MOVESPEED-50, FWD);
-  setM4(MOVESPEED-50, REV);
+  setM1(ROTSPEED, FWD);
+  setM2(ROTSPEED, REV);
+  setM3(ROTSPEED, FWD);
+  setM4(ROTSPEED, REV);
   delay(time_ms);
   Stationary();
 }
 
 void RotateRight(int time_ms){
-  setM1(MOVESPEED-50, REV);
-  setM2(MOVESPEED-50, FWD);
-  setM3(MOVESPEED-50, REV);
-  setM4(MOVESPEED-50, FWD);
+  setM1(ROTSPEED, REV);
+  setM2(ROTSPEED, FWD);
+  setM3(ROTSPEED, REV);
+  setM4(ROTSPEED, FWD);
   delay(time_ms);
   Stationary();
 }
@@ -248,6 +248,7 @@ void Stationary(){
   setM4(0, OFF);
 }
 
+unsigned long lastButtonPress = 0;  // Tracks last press time
 
 void dumpGamepad(ControllerPtr ctl) {
   // Read gamepad inputs
@@ -255,10 +256,24 @@ void dumpGamepad(ControllerPtr ctl) {
     int axisY = ctl->axisY();     // Left joystick Y-axis
     int axisRX = ctl->axisRX();   // Right joystick X-axis
     int brake = ctl->brake(); // brake button
+    int buttons = ctl->buttons();
+
 
     // Dead zone threshold to avoid unintentional movements
     int threshold = 150;
+    unsigned long currentTime = millis();
 
+  if ((buttons & 0x0002) && (currentTime - lastButtonPress > 200))
+    {  //speed switch
+    lastButtonPress = currentTime;
+    if (MOVESPEED == 250)
+    {
+        MOVESPEED = 120;
+        ROTSPEED = 80;}
+    else
+      {  MOVESPEED = 250;
+        ROTSPEED = 190; }
+    }
     // Determine movement based on joystick values
     if (axisX < -threshold) {  
         Serial.println("Move Left");
@@ -462,7 +477,7 @@ void loop(){
     // https://stackoverflow.com/questions/66278271/task-watchdog-got-triggered-the-tasks-did-not-reset-the-watchdog-in-time
 
     //     vTaskDelay(1);
-    delay(10);
+
   
 }
 
