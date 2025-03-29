@@ -39,7 +39,7 @@ const char* password = "spring25";
 #define LED_BUILTIN 2
 
 #define M1 17 //M1 PWM pin, Driver Board pin 11
-#define M2 27 //M2 PWM pin, Driver Board pin 3
+#define M2 26 //M2 PWM pin, Driver Board pin 3
 #define M3 13 //M3 PWM pin, Driver Board pin 6
 #define M4 14 //M4 PWM pin, Driver Board pin 5
 
@@ -67,7 +67,7 @@ int ROTSPEED = 190;
 #define DEBOUNCE_TIME 200  // Debounce time in milliseconds
 
 // Define extra pins
-#define SPOOL_PIN 26 //between 3 and 1 on driver
+#define SPOOL_PIN 27 //between 3 and 1 on driver
 #define ARM_PIN 32 // right of 9V
 #define MAGNET_PIN 33 // right of 32
 
@@ -503,15 +503,20 @@ void setup() {
 }
 
 void loop(){
+
+  bool dataUpdated = BP32.update();
+    if (dataUpdated)
+         processControllers();
+ 
   digitalWrite(SPOOL_PIN, HIGH);
   digitalWrite(ARM_PIN, HIGH);
   digitalWrite(MAGNET_PIN, HIGH);
-  delay(3000); // Keep HIGH for 1 second
+  delay(1000); // Keep HIGH for 1 second
 
   digitalWrite(SPOOL_PIN, LOW);
   digitalWrite(ARM_PIN, LOW);
   digitalWrite(MAGNET_PIN, LOW);
-  delay(3000); // Keep LOW for 1 second
+  delay(1000); // Keep LOW for 1 second
     // The main loop must have some kind of "yield to lower priority task" event.
     // Otherwise, the watchdog will get triggered.
     // If your main loop doesn't have one, just add a simple `vTaskDelay(1)`.
