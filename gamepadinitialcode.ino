@@ -39,19 +39,19 @@ const char* password = "spring25";
 #define LED_BUILTIN 2
 
 #define M1 17 //M1 PWM pin, Driver Board pin 11
-#define M2 26 //M2 PWM pin, Driver Board pin 3
+#define M2 27 //M2 PWM pin, Driver Board pin 3
 #define M3 13 //M3 PWM pin, Driver Board pin 6
 #define M4 14 //M4 PWM pin, Driver Board pin 5
 
 #define M1_REV false // set to true to reverse M1 direction
 #define M2_REV true // set to true to reverse M2 direction
-#define M3_REV false // set to true to reverse M3 direction
+#define M3_REV false // set to true t o reverse M3 direction
 #define M4_REV false // set to true to reverse M4 direction
 
 #define S1 19 //S1 PWM pin, Driver Board pin 9
 #define S2 18 //S2 PWM pin, Driver Board pin 10
 
-#define SR_DATA 23 // Serial Register data pin, Driver Board pin 8
+#define SR_DATA 23 // Serial Register data pin, Driver Board pin 8  
 #define SR_CLK 25 // Serial Register clock pin, Driver Board pin 4
 #define SR_LTCH 16 // Serial Register Latch Pin, Driver Board pin 12
 #define SR_EN 4 // Serial Register Enable, Driver Board pin 7
@@ -63,6 +63,14 @@ const char* password = "spring25";
 
 int MOVESPEED = 250;
 int ROTSPEED = 190;
+
+#define DEBOUNCE_TIME 200  // Debounce time in milliseconds
+
+// Define extra pins
+#define SPOOL_PIN 26 //between 3 and 1 on driver
+#define ARM_PIN 32 // right of 9V
+#define MAGNET_PIN 33 // right of 32
+
 ShiftRegister74HC595<1> SR(SR_DATA, SR_CLK, SR_LTCH); // Initialize Serial Register on Driver Board (Data, Clock, Latch)
 
 uint8_t motor_state = 0x00; // bitstring that defines the behavior of each motor driver via the Serial Register
@@ -249,6 +257,9 @@ void Stationary(){
 }
 
 unsigned long lastButtonPress = 0;  // Tracks last press time
+unsigned long lastSpoolPress = 0;   // Tracks last spool button press
+unsigned long lastArmPress = 0;     // Tracks last arm button press
+unsigned long lastMagnetPress = 0;
 
 void dumpGamepad(ControllerPtr ctl) {
   // Read gamepad inputs
@@ -263,7 +274,7 @@ void dumpGamepad(ControllerPtr ctl) {
     int threshold = 150;
     unsigned long currentTime = millis();
 
-  if ((buttons & 0x0002) && (currentTime - lastButtonPress > 200))
+  if ((buttons & 0x0002) && (currentTime - lastButtonPress > DEBOUNCE_TIME))
     {  //speed switch
     lastButtonPress = currentTime;
     if (MOVESPEED == 250)
@@ -274,6 +285,28 @@ void dumpGamepad(ControllerPtr ctl) {
       {  MOVESPEED = 250;
         ROTSPEED = 190; }
     }
+
+
+   if ((buttons & 0x0008) && (currentTime - lastSpoolPress > DEBOUNCE_TIME)) { //triangle
+        lastSpoolPress = currentTime;
+        digitalWrite(SPOOL_PIN, HIGH);
+        Serial.println("Spool Activated!");
+    }
+
+
+     if ((buttons & 0x0004) && (currentTime - lastArmPress > DEBOUNCE_TIME)) { //square
+        lastArmPress = currentTime;
+        digitalWrite(ARM_PIN, HIGH);
+        Serial.println("Arm Activated!");
+    }
+
+    if ((buttons & 0x0001) && (currentTime - lastMagnetPress > DEBOUNCE_TIME)) { //X
+        lastMagnetPress = currentTime;
+        digitalWrite(MAGNET_PIN, HIGH);
+        Serial.println("Magnet Activated!");
+    }
+
+
     // Determine movement based on joystick values
     if (axisX < -threshold) {  
         Serial.println("Move Left");
@@ -454,6 +487,10 @@ void setup() {
   pinMode(SR_LTCH, OUTPUT);
   pinMode(SR_EN, OUTPUT);
 
+   pinMode(SPOOL_PIN, OUTPUT);
+   pinMode(ARM_PIN, OUTPUT);
+   pinMode(MAGNET_PIN, OUTPUT);
+
   const uint8_t tmp = 0;
   SR.setAll(&tmp); // Set all output pin of shift register to 0.
 
@@ -466,10 +503,15 @@ void setup() {
 }
 
 void loop(){
-  bool dataUpdated = BP32.update();
-    if (dataUpdated)
-        processControllers();
+  digitalWrite(SPOOL_PIN, HIGH);
+  digitalWrite(ARM_PIN, HIGH);
+  digitalWrite(MAGNET_PIN, HIGH);
+  delay(3000); // Keep HIGH for 1 second
 
+  digitalWrite(SPOOL_PIN, LOW);
+  digitalWrite(ARM_PIN, LOW);
+  digitalWrite(MAGNET_PIN, LOW);
+  delay(3000); // Keep LOW for 1 second
     // The main loop must have some kind of "yield to lower priority task" event.
     // Otherwise, the watchdog will get triggered.
     // If your main loop doesn't have one, just add a simple `vTaskDelay(1)`.
