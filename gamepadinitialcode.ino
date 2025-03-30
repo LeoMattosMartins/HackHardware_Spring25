@@ -27,13 +27,8 @@ pad to another unused pin. In this code, we use pin 4 as the new enable pin.
 
 ControllerPtr myControllers[BP32_MAX_GAMEPADS];
 
-// Replace with your network credentials
-const char* ssid = "hackhardware_leo";
-const char* password = "spring25";
 
-// Set web server port number to 80
 
-// Variable to store the HTTP request
 
 // Pin Definitions
 #define LED_BUILTIN 2
@@ -67,9 +62,9 @@ int ROTSPEED = 190;
 #define DEBOUNCE_TIME 200  // Debounce time in milliseconds
 
 // Define extra pins
-#define SPOOL_PIN 27 //between 3 and 1 on driver
-#define ARM_PIN 32 // right of 9V
-#define MAGNET_PIN 33 // right of 32
+#define ARM_PIN 27 //between 3 and 1 on driver, BROWN 
+// #define ARM_PIN 32 // right of 9V, RED
+#define KNOCKER_PIN 33 // right of 32, ORANGE                                                                                                                                                   
 
 ShiftRegister74HC595<1> SR(SR_DATA, SR_CLK, SR_LTCH); // Initialize Serial Register on Driver Board (Data, Clock, Latch)
 
@@ -276,7 +271,6 @@ void dumpGamepad(ControllerPtr ctl) {
 
   if ((buttons & 0x0002) && (currentTime - lastButtonPress > DEBOUNCE_TIME))
     {  //speed switch
-    lastButtonPress = currentTime;
     if (MOVESPEED == 250)
     {
         MOVESPEED = 120;
@@ -287,24 +281,33 @@ void dumpGamepad(ControllerPtr ctl) {
     }
 
 
-   if ((buttons & 0x0008) && (currentTime - lastSpoolPress > DEBOUNCE_TIME)) { //triangle
-        lastSpoolPress = currentTime;
-        digitalWrite(SPOOL_PIN, HIGH);
-        Serial.println("Spool Activated!");
-    }
+  //  if ((buttons & 0x0008) && (currentTime - lastSpoolPress > DEBOUNCE_TIME)) { //triangle
+  //       lastSpoolPress = currentTime;
+  //       digitalWrite(SPOOL_PIN, HIGH);
+  //       delay(100);
+  //       Serial.println("Spool Activated!");
+  //   }
+  //   else
+  //     digitalWrite(SPOOL_PIN, LOW);
 
 
      if ((buttons & 0x0004) && (currentTime - lastArmPress > DEBOUNCE_TIME)) { //square
         lastArmPress = currentTime;
         digitalWrite(ARM_PIN, HIGH);
+        delay(100);
         Serial.println("Arm Activated!");
     }
+       else
+      digitalWrite(ARM_PIN, LOW);
 
     if ((buttons & 0x0001) && (currentTime - lastMagnetPress > DEBOUNCE_TIME)) { //X
         lastMagnetPress = currentTime;
-        digitalWrite(MAGNET_PIN, HIGH);
+        digitalWrite(KNOCKER_PIN, HIGH);
+        delay(100);
         Serial.println("Magnet Activated!");
     }
+       else
+      digitalWrite(KNOCKER_PIN, LOW);
 
 
     // Determine movement based on joystick values
@@ -381,52 +384,7 @@ void dumpGamepad(ControllerPtr ctl) {
 }
 
 void processGamepad(ControllerPtr ctl) {
-    // There are different ways to query whether a button is pressed.
-    // By query each button individually:
-    //  a(), b(), x(), y(), l1(), etc...
-    if (ctl->a()) {
-        static int colorIdx = 0;
-        // Some gamepads like DS4 and DualSense support changing the color LED.
-        // It is possible to change it by calling:
-        switch (colorIdx % 3) {
-            case 0:
-                // Red
-                ctl->setColorLED(255, 0, 0);
-                break;
-            case 1:
-                // Green
-                ctl->setColorLED(0, 255, 0);
-                break;
-            case 2:
-                // Blue
-                ctl->setColorLED(0, 0, 255);
-                break;
-        }
-        colorIdx++;
-    }
-
-    if (ctl->b()) {
-        // Turn on the 4 LED. Each bit represents one LED.
-        static int led = 0;
-        led++;
-        // Some gamepads like the DS3, DualSense, Nintendo Wii, Nintendo Switch
-        // support changing the "Player LEDs": those 4 LEDs that usually indicate
-        // the "gamepad seat".
-        // It is possible to change them by calling:
-        ctl->setPlayerLEDs(led & 0x0f);
-    }
-
-    if (ctl->x()) {
-        // Some gamepads like DS3, DS4, DualSense, Switch, Xbox One S, Stadia support rumble.
-        // It is possible to set it by calling:
-        // Some controllers have two motors: "strong motor", "weak motor".
-        // It is possible to control them independently.
-        ctl->playDualRumble(0 /* delayedStartMs */, 250 /* durationMs */, 0x80 /* weakMagnitude */,
-                            0x40 /* strongMagnitude */);
-    }
-
-    // Another way to query controller data is by getting the buttons() function.
-    // See how the different "dump*" functions dump the Controller info.
+    
     dumpGamepad(ctl);
 }
 
@@ -487,9 +445,9 @@ void setup() {
   pinMode(SR_LTCH, OUTPUT);
   pinMode(SR_EN, OUTPUT);
 
-   pinMode(SPOOL_PIN, OUTPUT);
+  //  pinMode(SPOOL_PIN, OUTPUT);
    pinMode(ARM_PIN, OUTPUT);
-   pinMode(MAGNET_PIN, OUTPUT);
+   pinMode(KNOCKER_PIN, OUTPUT);
 
   const uint8_t tmp = 0;
   SR.setAll(&tmp); // Set all output pin of shift register to 0.
@@ -508,15 +466,15 @@ void loop(){
     if (dataUpdated)
          processControllers();
  
-  digitalWrite(SPOOL_PIN, HIGH);
-  digitalWrite(ARM_PIN, HIGH);
-  digitalWrite(MAGNET_PIN, HIGH);
-  delay(1000); // Keep HIGH for 1 second
+  // digitalWrite(SPOOL_PIN, HIGH);
+  // digitalWrite(ARM_PIN, HIGH);
+  // digitalWrite(KNOCKER_PIN, HIGH);
+  // delay(1000); // Keep HIGH for 1 second
 
-  digitalWrite(SPOOL_PIN, LOW);
-  digitalWrite(ARM_PIN, LOW);
-  digitalWrite(MAGNET_PIN, LOW);
-  delay(1000); // Keep LOW for 1 second
+  // digitalWrite(SPOOL_PIN, LOW);
+  // digitalWrite(ARM_PIN, LOW);
+  // digitalWrite(KNOCKER_PIN, LOW);
+  // delay(1000); // Keep LOW for 1 second
     // The main loop must have some kind of "yield to lower priority task" event.
     // Otherwise, the watchdog will get triggered.
     // If your main loop doesn't have one, just add a simple `vTaskDelay(1)`.
